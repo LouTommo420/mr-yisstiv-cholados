@@ -1,1 +1,791 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>MR YISSTIV cholados - Heladería y Cholados</title>
+  <link rel="stylesheet" href="styles.css">
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600;700;900&family=Pacifico&display=swap" rel="stylesheet">
+</head>
+<body>
+  <!-- BOTÓN ADMIN FLOTANTE -->
+  <button id="btn-admin" class="btn-admin-flotante" title="Panel de Administración">
+    ️
+  </button>
 
+  <!-- MODAL LOGIN ADMIN -->
+  <div id="modal-login" class="modal-overlay">
+    <div class="modal-content modal-login">
+      <button class="modal-cerrar" onclick="cerrarModal('modal-login')">&times;</button>
+      <h2>🔐 Acceso Administrador</h2>
+      <p>Ingresa la contraseña para editar la página</p>
+      <input type="password" id="input-password" placeholder="Contraseña de admin">
+      <button onclick="verificarPassword()" class="btn-modal">Entrar</button>
+      <p id="error-password" class="error-msg"></p>
+    </div>
+  </div>
+
+  <!-- MODAL PANEL ADMIN -->
+  <div id="modal-admin" class="modal-overlay">
+    <div class="modal-content modal-admin-panel">
+      <button class="modal-cerrar" onclick="cerrarModal('modal-admin')">&times;</button>
+      <h2>⚙️ Panel de Administración</h2>
+      <div class="admin-opciones">
+        <button onclick="activarModoEdicion()" class="btn-admin-opcion">
+          ✏️ Activar Modo Edición
+        </button>
+        <button onclick="desactivarModoEdicion()" class="btn-admin-opcion">
+          💾 Guardar y Salir
+        </button>
+        <button onclick="cambiarPassword()" class="btn-admin-opcion">
+          🔑 Cambiar Contraseña
+        </button>
+        <button onclick="agregarUsuario()" class="btn-admin-opcion">
+          👤 Agregar Usuario
+        </button>
+        <button onclick="exportarDatos()" class="btn-admin-opcion">
+          📤 Exportar Datos
+        </button>
+        <button onclick="document.getElementById('import-file').click()" class="btn-admin-opcion">
+          📥 Importar Datos
+        </button>
+        <input type="file" id="import-file" accept=".json" style="display:none" onchange="importarDatos(event)">
+      </div>
+      <div id="modo-edicion-indicador" class="modo-edicion-badge" style="display:none;">
+        ✏️ MODO EDICIÓN ACTIVO - Haz clic en cualquier texto para editarlo
+      </div>
+    </div>
+  </div>
+
+  <!-- MODAL CAMBIAR PASSWORD -->
+  <div id="modal-password" class="modal-overlay">
+    <div class="modal-content modal-login">
+      <button class="modal-cerrar" onclick="cerrarModal('modal-password')">&times;</button>
+      <h2> Cambiar Contraseña</h2>
+      <input type="password" id="nueva-password" placeholder="Nueva contraseña">
+      <input type="password" id="confirmar-password" placeholder="Confirmar contraseña">
+      <button onclick="guardarNuevaPassword()" class="btn-modal">Guardar</button>
+      <p id="msg-password" class="error-msg"></p>
+    </div>
+  </div>
+
+  <!-- MODAL AGREGAR USUARIO -->
+  <div id="modal-usuario" class="modal-overlay">
+    <div class="modal-content modal-login">
+      <button class="modal-cerrar" onclick="cerrarModal('modal-usuario')">&times;</button>
+      <h2>👤 Agregar Usuario con Permisos</h2>
+      <input type="text" id="nombre-usuario" placeholder="Nombre del usuario">
+      <input type="password" id="password-usuario" placeholder="Contraseña">
+      <select id="rol-usuario">
+        <option value="editor">Editor (puede editar contenido)</option>
+        <option value="admin">Administrador (acceso total)</option>
+      </select>
+      <button onclick="guardarUsuario()" class="btn-modal">Agregar</button>
+      <div id="lista-usuarios" class="lista-usuarios"></div>
+    </div>
+  </div>
+
+  <!-- HEADER -->
+  <header class="header-principal">
+    <div class="logo-container">
+      <h1 class="logo-titulo editable" data-campo="titulo">MR YISSTIV</h1>
+      <p class="logo-subtitulo editable" data-campo="subtitulo">cholados</p>
+    </div>
+    <nav class="navegacion">
+      <a href="#modulo-catalogo" class="nav-link">Menú</a>
+      <a href="#modulo-reservas" class="nav-link">Reservas</a>
+      <a href="#modulo-domicilios" class="nav-link">Domicilios <span class="badge-carrito" id="contador-carrito">0</span></a>
+      <a href="#modulo-club-puntos" class="nav-link">Club de Puntos</a>
+    </nav>
+    <button class="btn-menu-movil" id="btn-menu-movil">☰</button>
+  </header>
+
+  <!-- HERO SECTION -->
+  <section class="hero">
+    <div class="hero-contenido">
+      <h2 class="hero-titulo editable" data-campo="hero-titulo">¡Bienvenido a MR YISSTIV cholados!</h2>
+      <p class="hero-descripcion editable" data-campo="hero-descripcion">Los mejores cholados, helados y refrescos de Ibagué</p>
+      <a href="#modulo-catalogo" class="btn-hero">Ver Menú</a>
+    </div>
+  </section>
+
+  <main>
+    <!-- MÓDULO 1: CATÁLOGO DE PRODUCTOS -->
+    <section id="modulo-catalogo" class="seccion-catalogo">
+      <h2 class="titulo-seccion editable" data-campo="titulo-catalogo">Nuestras especialidades</h2>
+
+      <!-- Categorías -->
+      <div class="categorias-filtro">
+        <button class="btn-categoria activa" data-categoria="todos">Todos</button>
+        <button class="btn-categoria" data-categoria="cholados">🍨 Cholados</button>
+        <button class="btn-categoria" data-categoria="conos">🍦 Conos</button>
+        <button class="btn-categoria" data-categoria="limonadas"> Limonadas</button>
+        <button class="btn-categoria" data-categoria="obleas">🧇 Obleas</button>
+        <button class="btn-categoria" data-categoria="postres">🍰 Postres</button>
+        <button class="btn-categoria" data-categoria="raspados">🧊 Raspados</button>
+        <button class="btn-categoria" data-categoria="comidas">🥪 Comidas</button>
+        <button class="btn-categoria" data-categoria="bebidas">☕ Bebidas</button>
+      </div>
+
+      <div class="contenedor-productos" id="contenedor-productos">
+
+        <!-- 1. CHOLADOS Y BEBIDAS ESPECIALES -->
+        <div class="tarjeta-flip" data-id="1" data-precio="10000" data-categoria="cholados">
+          <div class="tarjeta-interior">
+            <div class="cara-adelante">
+              <img src="images/cholados/yisstiv-cholao.jpg" alt="Yisstiv Cholao" class="foto-producto" onerror="this.style.display='none'">
+              <div class="foto-placeholder cholado-1"></div>
+              <h3 class="editable" data-campo="prod-1-nombre">YISSTIV CHOLAO</h3>
+              <span class="precio editable" data-campo="prod-1-precio">$10.000</span>
+            </div>
+            <div class="cara-atras">
+              <h3>YISSTIV CHOLAO</h3>
+              <p class="descripcion editable" data-campo="prod-1-desc">Refrescante y delicioso cholado que combina las frutas más exóticas de la región: maracuyá, piña, lulo y papaya, con helado cremoso y galleta crujiente.</p>
+              <button class="btn-pedido" onclick="agregarAlCarrito(1,'Yisstiv Cholao',10000)">Agregar al Domicilio</button>
+            </div>
+          </div>
+        </div>
+
+        <div class="tarjeta-flip" data-id="2" data-precio="10000" data-categoria="cholados">
+          <div class="tarjeta-interior">
+            <div class="cara-adelante">
+              <img src="images/cholados/maracuyazo.jpg" alt="Maracuyazo" class="foto-producto" onerror="this.style.display='none'">
+              <div class="foto-placeholder cholado-2"></div>
+              <h3 class="editable" data-campo="prod-2-nombre">MARACUYAZO</h3>
+              <span class="precio editable" data-campo="prod-2-precio">$10.000</span>
+            </div>
+            <div class="cara-atras">
+              <h3>MARACUYAZO</h3>
+              <p class="descripcion editable" data-campo="prod-2-desc">No es cualquier mezcla, ¡es una mezcla BOMBA! El Maracuyazo es para el amante del sabor real e intenso de la Maracuyá, lleno de pulpa, lecherita y galleta.</p>
+              <button class="btn-pedido" onclick="agregarAlCarrito(2,'Maracuyazo',10000)">Agregar al Domicilio</button>
+            </div>
+          </div>
+        </div>
+
+        <div class="tarjeta-flip" data-id="3" data-precio="10000" data-categoria="cholados">
+          <div class="tarjeta-interior">
+            <div class="cara-adelante">
+              <img src="images/cholados/guanabanazo.jpg" alt="Guanabanazo" class="foto-producto" onerror="this.style.display='none'">
+              <div class="foto-placeholder cholado-3"></div>
+              <h3 class="editable" data-campo="prod-3-nombre">GUANABANAZO</h3>
+              <span class="precio editable" data-campo="prod-3-precio">$10.000</span>
+            </div>
+            <div class="cara-atras">
+              <h3>GUANABANAZO</h3>
+              <p class="descripcion editable" data-campo="prod-3-desc">Te ofrecemos con el guanabanazo la suavidad y dulzura cultivadora. Guanábana cultivada con amor, transformada en sorbete con bola de helado y textura de galleta.</p>
+              <button class="btn-pedido" onclick="agregarAlCarrito(3,'Guanabanazo',10000)">Agregar al Domicilio</button>
+            </div>
+          </div>
+        </div>
+
+        <div class="tarjeta-flip" data-id="4" data-precio="10000" data-categoria="cholados">
+          <div class="tarjeta-interior">
+            <div class="cara-adelante">
+              <img src="images/cholados/lulada.jpg" alt="Lulada" class="foto-producto" onerror="this.style.display='none'">
+              <div class="foto-placeholder cholado-4"></div>
+              <h3 class="editable" data-campo="prod-4-nombre">LULADA</h3>
+              <span class="precio editable" data-campo="prod-4-precio">$10.000</span>
+            </div>
+            <div class="cara-atras">
+              <h3>LULADA</h3>
+              <p class="descripcion editable" data-campo="prod-4-desc">Explosión verde de frescura, lulo fresco fusionado con la dulzura de la lecherita, que dará el toque cálido de la ciudad. Galleta y helado que culminan esta locura de sabor.</p>
+              <button class="btn-pedido" onclick="agregarAlCarrito(4,'Lulada',10000)">Agregar al Domicilio</button>
+            </div>
+          </div>
+        </div>
+
+        <div class="tarjeta-flip" data-id="5" data-precio="10000" data-categoria="cholados">
+          <div class="tarjeta-interior">
+            <div class="cara-adelante">
+              <img src="images/cholados/salpiqueso.jpg" alt="Salpiqueso" class="foto-producto" onerror="this.style.display='none'">
+              <div class="foto-placeholder cholado-5"></div>
+              <h3 class="editable" data-campo="prod-5-nombre">SALPIQUESO</h3>
+              <span class="precio editable" data-campo="prod-5-precio">$10.000</span>
+            </div>
+            <div class="cara-atras">
+              <h3>SALPIQUESO</h3>
+              <p class="descripcion editable" data-campo="prod-5-desc">La mezcla del campo y la ciudad, la verdadera bomba tropical. Frutas seleccionadas perfectamente maduras para derretirse en tu boca, con un toque de queso y helado.</p>
+              <button class="btn-pedido" onclick="agregarAlCarrito(5,'Salpiqueso',10000)">Agregar al Domicilio</button>
+            </div>
+          </div>
+        </div>
+
+        <div class="tarjeta-flip" data-id="6" data-precio="10000" data-categoria="cholados">
+          <div class="tarjeta-interior">
+            <div class="cara-adelante">
+              <img src="images/cholados/maracumango.jpg" alt="Maracumango" class="foto-producto" onerror="this.style.display='none'">
+              <div class="foto-placeholder cholado-6"></div>
+              <h3 class="editable" data-campo="prod-6-nombre">MARACUMANGO</h3>
+              <span class="precio editable" data-campo="prod-6-precio">$10.000</span>
+            </div>
+            <div class="cara-atras">
+              <h3>MARACUMANGO</h3>
+              <p class="descripcion editable" data-campo="prod-6-desc">Fusión vibrante que te brindará una experiencia de sabores inolvidable: el cítrico de la maracuyá y la frescura del mango biche, con toque picante de tajín y limón.</p>
+              <button class="btn-pedido" onclick="agregarAlCarrito(6,'Maracumango',10000)">Agregar al Domicilio</button>
+            </div>
+          </div>
+        </div>
+
+        <div class="tarjeta-flip" data-id="7" data-precio="10000" data-categoria="cholados">
+          <div class="tarjeta-interior">
+            <div class="cara-adelante">
+              <img src="images/cholados/mangazo.jpg" alt="Mangazo" class="foto-producto" onerror="this.style.display='none'">
+              <div class="foto-placeholder cholado-7"></div>
+              <h3 class="editable" data-campo="prod-7-nombre">MANGAZO</h3>
+              <span class="precio editable" data-campo="prod-7-precio">$10.000</span>
+            </div>
+            <div class="cara-atras">
+              <h3>MANGAZO</h3>
+              <p class="descripcion editable" data-campo="prod-7-desc">Una bestia tropical, jugosa y cítrica, bañada en limón y Tajín a tu antojo con gusanitos tan dulces como tu mejor recuerdo y tan sabrosos como un día soleado.</p>
+              <button class="btn-pedido" onclick="agregarAlCarrito(7,'Mangazo',10000)">Agregar al Domicilio</button>
+            </div>
+          </div>
+        </div>
+
+        <div class="tarjeta-flip" data-id="8" data-precio="13000" data-categoria="cholados">
+          <div class="tarjeta-interior">
+            <div class="cara-adelante">
+              <img src="images/cholados/malteada.jpg" alt="Malteada" class="foto-producto" onerror="this.style.display='none'">
+              <div class="foto-placeholder cholado-8"></div>
+              <h3 class="editable" data-campo="prod-8-nombre">MALTEADA</h3>
+              <span class="precio editable" data-campo="prod-8-precio">$13.000</span>
+            </div>
+            <div class="cara-atras">
+              <h3>MALTEADA</h3>
+              <p class="descripcion editable" data-campo="prod-8-desc">Pura cremosidad y sabor en cada sorbo. Esta malteada rompe la dieta y el corazón, hecha con helado artesanal, topping de crema batida y barquillo de chocolate.</p>
+              <button class="btn-pedido" onclick="agregarAlCarrito(8,'Malteada',13000)">Agregar al Domicilio</button>
+            </div>
+          </div>
+        </div>
+
+        <div class="tarjeta-flip" data-id="9" data-precio="13000" data-categoria="cholados">
+          <div class="tarjeta-interior">
+            <div class="cara-adelante">
+              <img src="images/cholados/banana-split.jpg" alt="Banana Split" class="foto-producto" onerror="this.style.display='none'">
+              <div class="foto-placeholder cholado-9"></div>
+              <h3 class="editable" data-campo="prod-9-nombre">BANANA SPLIT</h3>
+              <span class="precio editable" data-campo="prod-9-precio">$13.000</span>
+            </div>
+            <div class="cara-atras">
+              <h3>BANANA SPLIT</h3>
+              <p class="descripcion editable" data-campo="prod-9-desc">La reina de los postres llegó a Mr. Yisstiv. Tres bolas de helado, con la dulzura y cremosidad de la fruta más nutritiva y energética con crema batida y salsas al gusto.</p>
+              <button class="btn-pedido" onclick="agregarAlCarrito(9,'Banana Split',13000)">Agregar al Domicilio</button>
+            </div>
+          </div>
+        </div>
+
+        <!-- 2. CONOS -->
+        <div class="tarjeta-flip" data-id="10" data-precio="10000" data-categoria="conos">
+          <div class="tarjeta-interior">
+            <div class="cara-adelante">
+              <img src="images/conos/cono-volteado.jpg" alt="Cono Volteado" class="foto-producto" onerror="this.style.display='none'">
+              <div class="foto-placeholder cono-1"></div>
+              <h3 class="editable" data-campo="prod-10-nombre">CONO VOLTEADO</h3>
+              <span class="precio editable" data-campo="prod-10-precio">$10.000</span>
+            </div>
+            <div class="cara-atras">
+              <h3>CONO VOLTEADO</h3>
+              <p class="descripcion editable" data-campo="prod-10-desc">El clásico que nunca pasa de moda, pero mejorado. Dos cremosas bolas de helado, rellenas de sabor con un topping de fruta refrescante. El cono, pero volteado.</p>
+              <button class="btn-pedido" onclick="agregarAlCarrito(10,'Cono Volteado',10000)">Agregar al Domicilio</button>
+            </div>
+          </div>
+        </div>
+
+        <div class="tarjeta-flip" data-id="11" data-precio="6000" data-categoria="conos">
+          <div class="tarjeta-interior">
+            <div class="cara-adelante">
+              <img src="images/conos/cono-doble.jpg" alt="Cono Doble" class="foto-producto" onerror="this.style.display='none'">
+              <div class="foto-placeholder cono-2"></div>
+              <h3 class="editable" data-campo="prod-11-nombre">CONO DOBLE</h3>
+              <span class="precio editable" data-campo="prod-11-precio">$6.000</span>
+            </div>
+            <div class="cara-atras">
+              <h3>CONO DOBLE</h3>
+              <p class="descripcion editable" data-campo="prod-11-desc">Doble bola de helado artesanal en cono crujiente. Elige tus sabores favoritos y disfruta de esta delicia clásica.</p>
+              <button class="btn-pedido" onclick="agregarAlCarrito(11,'Cono Doble',6000)">Agregar al Domicilio</button>
+            </div>
+          </div>
+        </div>
+
+        <div class="tarjeta-flip" data-id="12" data-precio="4000" data-categoria="conos">
+          <div class="tarjeta-interior">
+            <div class="cara-adelante">
+              <img src="images/conos/cono-sencillo.jpg" alt="Cono Sencillo" class="foto-producto" onerror="this.style.display='none'">
+              <div class="foto-placeholder cono-3"></div>
+              <h3 class="editable" data-campo="prod-12-nombre">CONO SENCILLO</h3>
+              <span class="precio editable" data-campo="prod-12-precio">$4.000</span>
+            </div>
+            <div class="cara-atras">
+              <h3>CONO SENCILLO</h3>
+              <p class="descripcion editable" data-campo="prod-12-desc">Una bola de helado artesanal en cono crocante. Simple pero delicioso, perfecto para un antojo rápido.</p>
+              <button class="btn-pedido" onclick="agregarAlCarrito(12,'Cono Sencillo',4000)">Agregar al Domicilio</button>
+            </div>
+          </div>
+        </div>
+
+        <!-- 3. LIMONADAS -->
+        <div class="tarjeta-flip" data-id="13" data-precio="6000" data-categoria="limonadas">
+          <div class="tarjeta-interior">
+            <div class="cara-adelante">
+              <img src="images/limonadas/limonada-brasilena.jpg" alt="Limonada Brasileña" class="foto-producto" onerror="this.style.display='none'">
+              <div class="foto-placeholder limonada-1"></div>
+              <h3 class="editable" data-campo="prod-13-nombre">LIMONADA BRASILEÑA</h3>
+              <span class="precio editable" data-campo="prod-13-precio">$6.000</span>
+            </div>
+            <div class="cara-atras">
+              <h3>LIMONADA BRASILEÑA</h3>
+              <p class="descripcion editable" data-campo="prod-13-desc">Explosión cítrica, fría y natural, con menta y hierbabuena. Ideal para recargar tu cuerpo y darte gusto.</p>
+              <button class="btn-pedido" onclick="agregarAlCarrito(13,'Limonada Brasileña',6000)">Agregar al Domicilio</button>
+            </div>
+          </div>
+        </div>
+
+        <div class="tarjeta-flip" data-id="14" data-precio="6000" data-categoria="limonadas">
+          <div class="tarjeta-interior">
+            <div class="cara-adelante">
+              <img src="images/limonadas/limonada-mango-biche.jpg" alt="Limonada Mango Biche" class="foto-producto" onerror="this.style.display='none'">
+              <div class="foto-placeholder limonada-2"></div>
+              <h3 class="editable" data-campo="prod-14-nombre">LIMONADA MANGO BICHE</h3>
+              <span class="precio editable" data-campo="prod-14-precio">$6.000</span>
+            </div>
+            <div class="cara-atras">
+              <h3>LIMONADA MANGO BICHE</h3>
+              <p class="descripcion editable" data-campo="prod-14-desc">Ácida y refrescante, con ese toque travieso del mango biche. Mejor dicho una fiesta de sabor callejero en la boca.</p>
+              <button class="btn-pedido" onclick="agregarAlCarrito(14,'Limonada Mango Biche',6000)">Agregar al Domicilio</button>
+            </div>
+          </div>
+        </div>
+
+        <div class="tarjeta-flip" data-id="15" data-precio="7000" data-categoria="limonadas">
+          <div class="tarjeta-interior">
+            <div class="cara-adelante">
+              <img src="images/limonadas/cerezada.jpg" alt="Cerezada" class="foto-producto" onerror="this.style.display='none'">
+              <div class="foto-placeholder limonada-3"></div>
+              <h3 class="editable" data-campo="prod-15-nombre">CEREZADA</h3>
+              <span class="precio editable" data-campo="prod-15-precio">$7.000</span>
+            </div>
+            <div class="cara-atras">
+              <h3>CEREZADA</h3>
+              <p class="descripcion editable" data-campo="prod-15-desc">Con este sí o sí, suspiras, refrescante y espumosa que te transporta directo a la infancia. Cerezada helada para el calor, tan rica que no se toma, se disfruta.</p>
+              <button class="btn-pedido" onclick="agregarAlCarrito(15,'Cerezada',7000)">Agregar al Domicilio</button>
+            </div>
+          </div>
+        </div>
+
+        <!-- 4. OBLEAS -->
+        <div class="tarjeta-flip" data-id="22" data-precio="3000" data-categoria="obleas">
+          <div class="tarjeta-interior">
+            <div class="cara-adelante">
+              <img src="images/obleas/oblea-sencilla.jpg" alt="Oblea Sencilla" class="foto-producto" onerror="this.style.display='none'">
+              <div class="foto-placeholder oblea-1"></div>
+              <h3 class="editable" data-campo="prod-22-nombre">OBLEA SENCILLA AREQUIPE</h3>
+              <span class="precio editable" data-campo="prod-22-precio">$3.000</span>
+            </div>
+            <div class="cara-atras">
+              <h3>OBLEA SENCILLA AREQUIPE</h3>
+              <p class="descripcion editable" data-campo="prod-22-desc">Esta oblea derite, corazones crujiente que abraza el sabor colombiano, rellena con el topping de sabor, a tu gusto, un clásico que no falla.</p>
+              <button class="btn-pedido" onclick="agregarAlCarrito(22,'Oblea Sencilla Arequipe',3000)">Agregar al Domicilio</button>
+            </div>
+          </div>
+        </div>
+
+        <div class="tarjeta-flip" data-id="23" data-precio="5000" data-categoria="obleas">
+          <div class="tarjeta-interior">
+            <div class="cara-adelante">
+              <img src="images/obleas/oblea-doble.jpg" alt="Oblea Doble" class="foto-producto" onerror="this.style.display='none'">
+              <div class="foto-placeholder oblea-2"></div>
+              <h3 class="editable" data-campo="prod-23-nombre">OBLEA DOBLE</h3>
+              <span class="precio editable" data-campo="prod-23-precio">$5.000</span>
+            </div>
+            <div class="cara-atras">
+              <h3>OBLEA DOBLE</h3>
+              <p class="descripcion editable" data-campo="prod-23-desc">Oblea doble con arequipe, mora y queso. Una explosión de sabores colombianos en cada mordida.</p>
+              <button class="btn-pedido" onclick="agregarAlCarrito(23,'Oblea Doble',5000)">Agregar al Domicilio</button>
+            </div>
+          </div>
+        </div>
+
+        <!-- 5. POSTRES -->
+        <div class="tarjeta-flip" data-id="16" data-precio="10000" data-categoria="postres">
+          <div class="tarjeta-interior">
+            <div class="cara-adelante">
+              <img src="images/postres/ensalada-yisstiv.jpg" alt="Ensalada Yisstiv" class="foto-producto" onerror="this.style.display='none'">
+              <div class="foto-placeholder postre-1"></div>
+              <h3 class="editable" data-campo="prod-16-nombre">ENSALADA YISSTIV</h3>
+              <span class="precio editable" data-campo="prod-16-precio">$10.000</span>
+            </div>
+            <div class="cara-atras">
+              <h3>ENSALADA YISSTIV</h3>
+              <p class="descripcion editable" data-campo="prod-16-desc">Carnaval tropical, cada porción cargada de frutas frescas, picadas y empeladas al momento, endulzada con lecherita y queso. Finalmente una bola de helado perfecta para snack o un antojo saludable.</p>
+              <button class="btn-pedido" onclick="agregarAlCarrito(16,'Ensalada Yisstiv',10000)">Agregar al Domicilio</button>
+            </div>
+          </div>
+        </div>
+
+        <div class="tarjeta-flip" data-id="17" data-precio="10000" data-categoria="postres">
+          <div class="tarjeta-interior">
+            <div class="cara-adelante">
+              <img src="images/postres/brownie-con-helado.jpg" alt="Brownie con Helado" class="foto-producto" onerror="this.style.display='none'">
+              <div class="foto-placeholder postre-2"></div>
+              <h3 class="editable" data-campo="prod-17-nombre">BROWNIE CON HELADO</h3>
+              <span class="precio editable" data-campo="prod-17-precio">$10.000</span>
+            </div>
+            <div class="cara-atras">
+              <h3>BROWNIE CON HELADO</h3>
+              <p class="descripcion editable" data-campo="prod-17-desc">Suave por fuera y por dentro, la combinación perfecta entre la dulzura del brownie artesanal y la irresistible cremosidad de un helado a tu gusto.</p>
+              <button class="btn-pedido" onclick="agregarAlCarrito(17,'Brownie con Helado',10000)">Agregar al Domicilio</button>
+            </div>
+          </div>
+        </div>
+
+        <div class="tarjeta-flip" data-id="19" data-precio="15000" data-categoria="postres">
+          <div class="tarjeta-interior">
+            <div class="cara-adelante">
+              <img src="images/postres/fresas-con-crema.jpg" alt="Fresas con Crema" class="foto-producto" onerror="this.style.display='none'">
+              <div class="foto-placeholder postre-4"></div>
+              <h3 class="editable" data-campo="prod-19-nombre">FRESAS CON CREMA</h3>
+              <span class="precio editable" data-campo="prod-19-precio">$15.000</span>
+            </div>
+            <div class="cara-atras">
+              <h3>FRESAS CON CREMA</h3>
+              <p class="descripcion editable" data-campo="prod-19-desc">El clásico que nunca falla, pero en Yisstiv: Dulces, cremosas y refrescantes; un postre simple que siempre alegra el día.</p>
+              <button class="btn-pedido" onclick="agregarAlCarrito(19,'Fresas con Crema',15000)">Agregar al Domicilio</button>
+            </div>
+          </div>
+        </div>
+
+        <div class="tarjeta-flip" data-id="20" data-precio="13000" data-categoria="postres">
+          <div class="tarjeta-interior">
+            <div class="cara-adelante">
+              <img src="images/postres/tentacion-de-queso.jpg" alt="Tentación de Queso" class="foto-producto" onerror="this.style.display='none'">
+              <div class="foto-placeholder postre-5"></div>
+              <h3 class="editable" data-campo="prod-20-nombre">TENTACIÓN DE QUESO</h3>
+              <span class="precio editable" data-campo="prod-20-precio">$13.000</span>
+            </div>
+            <div class="cara-atras">
+              <h3>TENTACIÓN DE QUESO</h3>
+              <p class="descripcion editable" data-campo="prod-20-desc">Bienvenidos a un encuentro inesperado! Queso y helado, dos ingredientes que parecen no tener nada en común pero al fusionarse crean una experiencia única y deliciosa.</p>
+              <button class="btn-pedido" onclick="agregarAlCarrito(20,'Tentación de Queso',13000)">Agregar al Domicilio</button>
+            </div>
+          </div>
+        </div>
+
+        <!-- 6. RASPADOS -->
+        <div class="tarjeta-flip" data-id="18" data-precio="6000" data-categoria="raspados">
+          <div class="tarjeta-interior">
+            <div class="cara-adelante">
+              <img src="images/postres/raspados.jpg" alt="Raspados" class="foto-producto" onerror="this.style.display='none'">
+              <div class="foto-placeholder postre-3"></div>
+              <h3 class="editable" data-campo="prod-18-nombre">RASPADOS</h3>
+              <span class="precio editable" data-campo="prod-18-precio">$6.000</span>
+            </div>
+            <div class="cara-atras">
+              <h3>RASPADOS</h3>
+              <p class="descripcion editable" data-campo="prod-18-desc">Una fusión divertida de colores y sabores que te hacen recordar cosas bonitas en cada bocado. Refrescante y delicioso.</p>
+              <button class="btn-pedido" onclick="agregarAlCarrito(18,'Raspados',6000)">Agregar al Domicilio</button>
+            </div>
+          </div>
+        </div>
+
+        <div class="tarjeta-flip" data-id="21" data-precio="12000" data-categoria="raspados">
+          <div class="tarjeta-interior">
+            <div class="cara-adelante">
+              <img src="images/postres/yisstiv-ice-kiss.jpg" alt="Yisstiv Ice Kiss" class="foto-producto" onerror="this.style.display='none'">
+              <div class="foto-placeholder postre-6"></div>
+              <h3 class="editable" data-campo="prod-21-nombre">YISSTIV ICE KISS</h3>
+              <span class="precio editable" data-campo="prod-21-precio">$12.000</span>
+            </div>
+            <div class="cara-atras">
+              <h3>YISSTIV ICE KISS</h3>
+              <p class="descripcion editable" data-campo="prod-21-desc">Estos granizados llegaron para volverte loco: Mango biche fresco y ácido, Mora intensa y atrevida, Fresa salvaje con sabor a deseo. Fría, roja y absolutamente irresistible.</p>
+              <button class="btn-pedido" onclick="agregarAlCarrito(21,'Yisstiv Ice Kiss',12000)">Agregar al Domicilio</button>
+            </div>
+          </div>
+        </div>
+
+        <!-- 7. COMIDAS -->
+        <div class="tarjeta-flip" data-id="24" data-precio="12000" data-categoria="comidas">
+          <div class="tarjeta-interior">
+            <div class="cara-adelante">
+              <img src="images/comidas/yisstiv-sandwich.jpg" alt="Yisstiv Sandwich" class="foto-producto" onerror="this.style.display='none'">
+              <div class="foto-placeholder comida-1"></div>
+              <h3 class="editable" data-campo="prod-24-nombre">YISSTIV SANDWICHS</h3>
+              <span class="precio editable" data-campo="prod-24-precio">$12.000</span>
+            </div>
+            <div class="cara-atras">
+              <h3>YISSTIV SANDWICHS</h3>
+              <p class="descripcion editable" data-campo="prod-24-desc">El colombiano (cebolla picada sazonada con las salsas de la casa, queso mozzarella, maíz tierno, jamón y tocineta), Jamón Gourmet, Hawaiano. Todas acompañadas con la salsa de la casa.</p>
+              <button class="btn-pedido" onclick="agregarAlCarrito(24,'Yisstiv Sandwich',12000)">Agregar al Domicilio</button>
+            </div>
+          </div>
+        </div>
+
+        <div class="tarjeta-flip" data-id="25" data-precio="9000" data-categoria="comidas">
+          <div class="tarjeta-interior">
+            <div class="cara-adelante">
+              <img src="images/comidas/queso-asado.jpg" alt="Queso Asado" class="foto-producto" onerror="this.style.display='none'">
+              <div class="foto-placeholder comida-2"></div>
+              <h3 class="editable" data-campo="prod-25-nombre">QUESO ASADO</h3>
+              <span class="precio editable" data-campo="prod-25-precio">$9.000</span>
+            </div>
+            <div class="cara-atras">
+              <h3>QUESO ASADO</h3>
+              <p class="descripcion editable" data-campo="prod-25-desc">Un manjar de Dioses. Disfrútalo como quieras... Con un buen café o aguapanela. A tu gusto.</p>
+              <button class="btn-pedido" onclick="agregarAlCarrito(25,'Queso Asado',9000)">Agregar al Domicilio</button>
+            </div>
+          </div>
+        </div>
+
+        <!-- 8. BEBIDAS -->
+        <div class="tarjeta-flip" data-id="26" data-precio="15000" data-categoria="bebidas">
+          <div class="tarjeta-interior">
+            <div class="cara-adelante">
+              <img src="images/bebidas/migao.jpg" alt="Migao" class="foto-producto" onerror="this.style.display='none'">
+              <div class="foto-placeholder comida-3"></div>
+              <h3 class="editable" data-campo="prod-26-nombre">MIGAO</h3>
+              <span class="precio editable" data-campo="prod-26-precio">$15.000</span>
+            </div>
+            <div class="cara-atras">
+              <h3>MIGAO</h3>
+              <p class="descripcion editable" data-campo="prod-26-desc">Cocoa caliente para conquistar tu paladar con el acompañan: queso criollo o quesillo mozzarella, bizcocho crocante de maíz, achira y mantequilla, almohabana esponjosa, croissant, galletas dulces y salatinas.</p>
+              <button class="btn-pedido" onclick="agregarAlCarrito(26,'Migao',15000)">Agregar al Domicilio</button>
+            </div>
+          </div>
+        </div>
+
+        <div class="tarjeta-flip" data-id="27" data-precio="9000" data-categoria="bebidas">
+          <div class="tarjeta-interior">
+            <div class="cara-adelante">
+              <img src="images/bebidas/jugos-naturales.jpg" alt="Jugos Naturales" class="foto-producto" onerror="this.style.display='none'">
+              <div class="foto-placeholder bebida-1"></div>
+              <h3 class="editable" data-campo="prod-27-nombre">JUGOS NATURALES</h3>
+              <span class="precio editable" data-campo="prod-27-precio">$9.000</span>
+            </div>
+            <div class="cara-atras">
+              <h3>JUGOS NATURALES</h3>
+              <p class="descripcion editable" data-campo="prod-27-desc">Fresa, Mora, Maracuyá, Lulo, Papaya, Banano. En agua o en leche. Jugos 100% naturales.</p>
+              <button class="btn-pedido" onclick="agregarAlCarrito(27,'Jugo Natural',9000)">Agregar al Domicilio</button>
+            </div>
+          </div>
+        </div>
+
+        <div class="tarjeta-flip" data-id="28" data-precio="9000" data-categoria="bebidas">
+          <div class="tarjeta-interior">
+            <div class="cara-adelante">
+              <img src="images/bebidas/aguapanela.jpg" alt="Aguapanela" class="foto-producto" onerror="this.style.display='none'">
+              <div class="foto-placeholder bebida-2"></div>
+              <h3 class="editable" data-campo="prod-28-nombre">AGUAPANELA</h3>
+              <span class="precio editable" data-campo="prod-28-precio">$9.000</span>
+            </div>
+            <div class="cara-atras">
+              <h3>AGUAPANELA</h3>
+              <p class="descripcion editable" data-campo="prod-28-desc">Aguapanela de la tierra con quesillo o queso criollo, acompañado de bizcochitos crocantes, para esos días con gelados que necesitamos calorcito.</p>
+              <button class="btn-pedido" onclick="agregarAlCarrito(28,'Aguapanela',9000)">Agregar al Domicilio</button>
+            </div>
+          </div>
+        </div>
+
+        <div class="tarjeta-flip" data-id="29" data-precio="3000" data-categoria="bebidas">
+          <div class="tarjeta-interior">
+            <div class="cara-adelante">
+              <img src="images/bebidas/botella-agua.jpg" alt="Botella de Agua" class="foto-producto" onerror="this.style.display='none'">
+              <div class="foto-placeholder bebida-3"></div>
+              <h3 class="editable" data-campo="prod-29-nombre">BOTELLA DE AGUA</h3>
+              <span class="precio editable" data-campo="prod-29-precio">$3.000</span>
+            </div>
+            <div class="cara-atras">
+              <h3>BOTELLA DE AGUA</h3>
+              <p class="descripcion editable" data-campo="prod-29-desc">Agua embotellada fría para acompañar tu pedido.</p>
+              <button class="btn-pedido" onclick="agregarAlCarrito(29,'Botella de Agua',3000)">Agregar al Domicilio</button>
+            </div>
+          </div>
+        </div>
+
+      </div>
+    </section>
+
+    <!-- MÓDULO 2: RESERVAS -->
+    <section id="modulo-reservas" class="seccion-reservas">
+      <h2 class="titulo-seccion editable" data-campo="titulo-reservas">Reserva tu Mesa y Encuéntranos</h2>
+      <div class="reservas-contenedor">
+        <div class="info-ubicacion">
+          <h3 class="editable" data-campo="subtitulo-ubicacion">¿Cómo llegar?</h3>
+          <div class="datos-ubicacion">
+            <p><strong>Dirección:</strong> <span class="editable" data-campo="direccion">Mz x Casa x prederas de Santa rita, Ibague</span></p>
+            <p><strong>Horario:</strong> <span class="editable" data-campo="horario">Lunes a Domingo, 02:00 PM - 12:00 PM</span></p>
+            <p><strong>Teléfono:</strong> <span class="editable" data-campo="telefono">310 555 9630</span></p>
+            <p><strong>WhatsApp:</strong> <span class="editable" data-campo="whatsapp">310 555 9630</span></p>
+          </div>
+          <div class="mapa-contenedor">
+            <iframe src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d15932.123456789!2d-74.80123456789!3d4.33123456789!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x0%3A0x0!2zNMKwMTknNTIuNCJOIDc0wrA0OCcwNC40Ilc!5e0!3m2!1ses!2sco!4v1234567890123!5m2!1ses!2sco" width="100%" height="300" style="border:0; border-radius: 15px;" allowfullscreen="" loading="lazy"></iframe>
+          </div>
+        </div>
+        <div class="formulario-reserva-container">
+          <h3 class="editable" data-campo="subtitulo-reserva">Reserva tu Mesa</h3>
+          <form id="form-reserva" class="formulario-reserva">
+            <div class="grupo-campos">
+              <div class="campo">
+                <label for="nombre">Nombre Completo:</label>
+                <input type="text" id="nombre" placeholder="Ej. Harry Styles" required>
+              </div>
+              <div class="campo">
+                <label for="telefono">Teléfono:</label>
+                <input type="tel" id="telefono" placeholder="Ej. 3001234567" required>
+              </div>
+              <div class="campo">
+                <label for="fecha">Fecha de Visita:</label>
+                <input type="date" id="fecha" required>
+              </div>
+              <div class="campo">
+                <label for="hora">Hora del Evento:</label>
+                <input type="time" id="hora" required>
+              </div>
+              <div class="campo">
+                <label for="personas">Número de Personas:</label>
+                <input type="number" id="personas" min="1" max="20" value="2" required>
+              </div>
+              <div class="campo">
+                <label for="tipo-reserva">Tipo de Reserva:</label>
+                <select id="tipo-reserva" required>
+                  <option value="Consumo Estándar">Solo consumo</option>
+                  <option value="Mesa+Juegos">Mesa con juegos interactivos</option>
+                  <option value="Taller Cerámica">Mesa + cerámica (*Valor adicional)</option>
+                </select>
+              </div>
+            </div>
+            <button type="submit" class="btn-reservar">Confirmar Reserva</button>
+          </form>
+          <div id="resultado-reserva" class="resultado-reserva"></div>
+        </div>
+      </div>
+    </section>
+
+    <!-- MÓDULO 3: DOMICILIOS -->
+    <section id="modulo-domicilios" class="seccion-domicilios">
+      <h2 class="titulo-seccion editable" data-campo="titulo-domicilios">Domicilios</h2>
+      <p class="descripcion-seccion editable" data-campo="desc-domicilios">Pide desde la comodidad de tu casa. Llevamos el sabor hasta tu puerta.</p>
+      <div class="domicilios-contenedor">
+        <div class="resumen-pedido">
+          <h3>Tu Pedido</h3>
+          <div id="items-carrito" class="contenedor-carrito">
+            <p class="carrito-vacio">Tu pedido está vacío. ¡Agrega productos deliciosos del menú!</p>
+          </div>
+          <div class="total-pedido">
+            <span>Total:</span>
+            <span class="total-valor">$<span id="total-valor">0</span></span>
+          </div>
+        </div>
+        <div class="datos-entrega">
+          <h3>Datos de Entrega</h3>
+          <form id="form-domicilio" class="formulario-domicilio">
+            <div class="grupo-campos">
+              <div class="campo">
+                <label for="nombre-entrega">Nombre Completo:</label>
+                <input type="text" id="nombre-entrega" placeholder="Ej. Juan Pérez" required>
+              </div>
+              <div class="campo">
+                <label for="telefono-entrega">Teléfono/WhatsApp:</label>
+                <input type="tel" id="telefono-entrega" placeholder="Ej. 3001234567" required>
+              </div>
+              <div class="campo campo-completo">
+                <label for="direccion-entrega">Dirección de Entrega:</label>
+                <input type="text" id="direccion-entrega" placeholder="Ej. Calle 10#20-30, Apto 201" required>
+              </div>
+              <div class="campo">
+                <label for="barrio-entrega">Barrio:</label>
+                <input type="text" id="barrio-entrega" placeholder="Ej. Centro" required>
+              </div>
+              <div class="campo">
+                <label for="notas-entrega">Notas adicionales (opcional):</label>
+                <input type="text" id="notas-entrega" placeholder="Ej. Tocar el timbre, edificio azul...">
+              </div>
+            </div>
+            <div class="metodo-pago">
+              <label for="estrategia-pago">Método de Pago:</label>
+              <select id="estrategia-pago">
+                <option value="PagoEfectivo">Pago en Efectivo (contra entrega)</option>
+                <option value="PagoTarjeta">Tarjeta de Crédito/Débito</option>
+                <option value="PagoNequi">Nequi</option>
+                <option value="PagoDaviplata">Daviplata</option>
+              </select>
+            </div>
+            <button type="submit" class="btn-pagar">Confirmar Domicilio</button>
+          </form>
+        </div>
+      </div>
+    </section>
+
+    <!-- MÓDULO 4: CLUB DE PUNTOS -->
+    <section id="modulo-club-puntos" class="seccion-club-puntos">
+      <h2 class="titulo-seccion editable" data-campo="titulo-club">Club de Puntos</h2>
+      <p class="descripcion-seccion editable" data-campo="desc-club">Acumula puntos con cada compra y obtén descuentos exclusivos. ¡Mientras más compras, más ahorras!</p>
+      <div class="club-puntos-contenedor">
+        <div class="info-niveles">
+          <h3>Niveles del Club</h3>
+          <div class="niveles-grid">
+            <div class="nivel-card bronce">
+              <div class="nivel-icono"></div>
+              <h4>Bronce</h4>
+              <p>0-499 puntos</p>
+              <p class="nivel-beneficio">Sin descuento</p>
+            </div>
+            <div class="nivel-card plata">
+              <div class="nivel-icono">🥈</div>
+              <h4>Plata</h4>
+              <p>500-999 puntos</p>
+              <p class="nivel-beneficio">10% de descuento</p>
+            </div>
+            <div class="nivel-card oro">
+              <div class="nivel-icono">🥇</div>
+              <h4>Oro</h4>
+              <p>1000+ puntos</p>
+              <p class="nivel-beneficio">20% de descuento</p>
+            </div>
+          </div>
+        </div>
+        <div class="consulta-puntos">
+          <h3>Consulta tus Puntos</h3>
+          <p>Ingresa tu número de documento para ver tu saldo y nivel actual.</p>
+          <div class="consulta-input">
+            <input type="text" id="documento-cliente" placeholder="Ingresa tu documento">
+            <button type="button" onclick="consultarFidelidad()" class="btn-consultar">Verificar Puntos</button>
+          </div>
+          <div id="resultado-fidelizacion" class="resultado-fidelizacion"></div>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <!-- FOOTER -->
+  <footer class="footer">
+    <div class="footer-contenido">
+      <div class="footer-info">
+        <h3 class="editable" data-campo="footer-titulo">MR YISSTIV cholados</h3>
+        <p class="editable" data-campo="footer-desc">Los mejores cholados y helados de la ciudad</p>
+      </div>
+      <div class="footer-contacto">
+        <h4>Contacto</h4>
+        <p>Tel: <span class="editable" data-campo="footer-tel">300 123 4567</span></p>
+        <p>Email: <span class="editable" data-campo="footer-email">info@mryisstiv.com</span></p>
+        <p class="editable" data-campo="footer-ciudad">Ibague - Tolima</p>
+      </div>
+      <div class="footer-redes">
+        <h4>Síguenos</h4>
+        <div class="redes-sociales">
+          <a href="#" class="red-social">Facebook</a>
+          <a href="#" class="red-social">Instagram</a>
+          <a href="#" class="red-social">WhatsApp</a>
+        </div>
+      </div>
+    </div>
+    <div class="footer-bottom">
+      <p>&copy; 2026 MR YISSTIV cholados. Todos los derechos reservados.</p>
+    </div>
+  </footer>
+
+  <!-- NOTIFICACIÓN -->
+  <div id="notificacion" class="notificacion"></div>
+
+  <script src="app.js"></script>
+</body>
+</html>
